@@ -1,0 +1,25 @@
+spring:
+  data:
+    redis:
+      host: redis.nat.k92.top
+      port: 6379
+      password: Anzu928495870/
+      database: 8
+
+khronos:
+  morning-start-file-dir: .
+  morning-end-file-dir: .
+  afternoon-start-file-dir: .
+  afternoon-end-file-dir: .
+  location-list:
+    - 123456
+  baidu-ak: 6xAw1qbSQ1qrS8jPo7naXJ8RDoHVHI38
+  base-url: ""
+  secret: OTI4NDk1ODcw
+  scheduled:
+    morning-start-cron: "0 15 8 * * ?"
+    morning-end-cron: "0 15 8 * * ?"
+    afternoon-start-cron: "0 15 8 * * ?"
+    afternoon-end-cron: "0 15 8 * * ?"
+    night-add-cron: "0 15 8 * * ?"
+  phone-number: 18257657990
