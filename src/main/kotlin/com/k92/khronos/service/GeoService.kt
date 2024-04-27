@@ -16,8 +16,7 @@ class GeoService(val khronosConfig: KhronosConfig, val restTemplate: RestTemplat
         val response = restTemplate.getForEntity(url, String::class.java)
         if (response.statusCode == HttpStatus.OK) {
             val resultJson = response.body!!
-            val result = objectMapper.readValue(resultJson, BaiduEncodeResult::class.java)
-            return result
+            return objectMapper.readValue(resultJson, BaiduEncodeResult::class.java)
         }
         throw AttendanceException("获取坐标信息失败");
     }

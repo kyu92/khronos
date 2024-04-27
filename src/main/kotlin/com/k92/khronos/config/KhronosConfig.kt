@@ -24,6 +24,7 @@ class KhronosConfig {
     }
 
     var baseUrl = ""
+    var morningAddFileDir = ""
     var morningStartFileDir = ""
     var morningEndFileDir = ""
     var afternoonStartFileDir = ""

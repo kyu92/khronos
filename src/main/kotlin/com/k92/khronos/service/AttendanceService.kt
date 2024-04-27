@@ -21,6 +21,7 @@ import org.springframework.web.client.RestTemplate
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileInputStream
+import java.io.InputStream
 import java.math.BigDecimal
 import javax.management.OperationsException
 
@@ -47,6 +48,10 @@ class AttendanceService(val khronosConfig: KhronosConfig, val redisTemplate: Red
     }
 
     fun requestAttendance(timestamp: Long, lon: BigDecimal, lat: BigDecimal, address: String, attachment: File, retryCount: Int) {
+        requestAttendance(timestamp, lon, lat, address, FileInputStream(attachment), attachment.name, retryCount)
+    }
+
+    fun requestAttendance(timestamp: Long, lon: BigDecimal, lat: BigDecimal, address: String, attachment: InputStream, attachmentName: String, retryCount: Int) {
         val tokenKey = "qiantu:token:${khronosConfig.phoneNumber}";
         try {
             val token: String;
@@ -56,12 +61,12 @@ class AttendanceService(val khronosConfig: KhronosConfig, val redisTemplate: Red
                 token = createToken();
                 redisTemplate.opsForValue().set(tokenKey, token);
             }
-            val attachmentId = uploadPic(attachment, token);
+            val attachmentId = uploadPic(attachment, attachmentName, token);
             attendance(timestamp, lon, lat, address, attachmentId, token)
         } catch (e: AttendanceException) {
             e.printStackTrace()
             if (retryCount < 3) {
-                requestAttendance(timestamp, lon, lat, address, attachment, retryCount + 1)
+                requestAttendance(timestamp, lon, lat, address, attachment, attachmentName, retryCount + 1)
             }
             throw OperationsException("打卡失败，且重复3次后依然失败");
         }
@@ -76,13 +81,17 @@ class AttendanceService(val khronosConfig: KhronosConfig, val redisTemplate: Red
     }
 
     fun uploadPic(attachment: File, token: String): Int {
+        return uploadPic(FileInputStream(attachment), attachment.name, token)
+    }
+
+    fun uploadPic(attachment: InputStream, fileName: String, token: String): Int {
         val url = "${khronosConfig.baseUrl}/attachment/attendance"
         var fileSystemResource: AbstractResource
-        val size = attachment.length()
+        val size = attachment.available()
         if (size <= 1024 * 1024) {
-            fileSystemResource = FileSystemResource(attachment)
+            fileSystemResource = InputStreamResource(attachment)
         } else {
-            val formatName = attachment.name.substring(attachment.name.lastIndexOf(".") + 1)
+            val formatName = fileName.substring(fileName.lastIndexOf(".") + 1)
             var src = attachment.readBytes()
             src = ImageUtil.compressImage(src, 0.8F, formatName)
             src = ImageUtil.resize(src, 1080, 1920, formatName)
@@ -103,7 +112,6 @@ class AttendanceService(val khronosConfig: KhronosConfig, val redisTemplate: Red
             throw AttendanceException("上传打卡照片失败, 接口响应失败，原因：" + body.message)
         }
         return (body.data as Int)
-
     }
 
     private fun attendance(timestamp: Long, lon: BigDecimal, lat: BigDecimal, address: String, attachmentId: Int, token: String) {
