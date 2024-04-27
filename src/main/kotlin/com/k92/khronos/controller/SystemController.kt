@@ -27,7 +27,7 @@ class SystemController {
         return ResultMap.success();
     }
 
-    @PostMapping("/attendance")
+    @GetMapping("/attendance")
     fun customAttendance() {
 
     }
