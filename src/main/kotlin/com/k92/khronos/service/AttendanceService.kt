@@ -21,9 +21,8 @@ import java.math.BigDecimal
 import javax.management.OperationsException
 
 @Service
-class AttendanceService(val khronosConfig: KhronosConfig, val redisTemplate: RedisTemplate<String, Any>) {
+class AttendanceService(val khronosConfig: KhronosConfig, val redisTemplate: RedisTemplate<String, Any>, val restTemplate: RestTemplate) {
 
-    lateinit var restTemplate: RestTemplate;
     lateinit var objectMapper: ObjectMapper;
 
     companion object {
@@ -35,7 +34,6 @@ class AttendanceService(val khronosConfig: KhronosConfig, val redisTemplate: Red
 
     @PostConstruct
     fun init() {
-        restTemplate = RestTemplate();
         objectMapper = ObjectMapper();
         val tokenKey = getTokenKey(khronosConfig.phoneNumber);
         if (!redisTemplate.hasKey(tokenKey)) {
@@ -57,6 +55,7 @@ class AttendanceService(val khronosConfig: KhronosConfig, val redisTemplate: Red
             val attachmentId = uploadPic(attachment, token);
             attendance(timestamp, lon, lat, address, attachmentId, token)
         } catch (e: AttendanceException) {
+            e.printStackTrace()
             if (retryCount < 3) {
                 requestAttendance(timestamp, lon, lat, address, attachment, retryCount + 1)
             }
@@ -65,7 +64,7 @@ class AttendanceService(val khronosConfig: KhronosConfig, val redisTemplate: Red
     }
 
     fun createToken(): String {
-        val response = restTemplate.getForEntity("${khronosConfig.baseUrl}/auth/token/create/${khronosConfig.phoneNumber}?secret=${khronosConfig.secret}", String::class.java)
+        val response = restTemplate.getForEntity("${khronosConfig.baseUrl}/auth/token/${khronosConfig.phoneNumber}?secret=${khronosConfig.secret}", String::class.java)
         if (response.statusCode == HttpStatus.OK) {
             return response.body!!
         }
@@ -83,19 +82,15 @@ class AttendanceService(val khronosConfig: KhronosConfig, val redisTemplate: Red
         headers["Authorization"]= token
         val requestEntity = HttpEntity(params, headers)
         val response = restTemplate.postForEntity(url, requestEntity, ResultMap::class.java)
-        if (response.statusCode == HttpStatus.OK) {
-            return (response.body!!.data as Int)
+        if (response.statusCode != HttpStatus.OK) {
+            throw AttendanceException("上传打卡照片失败, 响应错误：" + response.statusCode)
         }
-        throw AttendanceException("上传打卡照片失败");
-    }
+        val body = response.body!!
+        if (!body.success) {
+            throw AttendanceException("上传打卡照片失败, 接口响应失败，原因：" + body.message)
+        }
+        return (body.data as Int)
 
-    fun getLocation(address: String): BaiduEncodeResult {
-        val url = "https://api.map.baidu.com/geocoding/v3/?address=$address&output=json&ak=${khronosConfig.baiduAk}";
-        val response = restTemplate.getForEntity(url, BaiduEncodeResult::class.java)
-        if (response.statusCode == HttpStatus.OK) {
-            return response.body!!
-        }
-        throw AttendanceException("获取坐标信息失败");
     }
 
     private fun attendance(timestamp: Long, lon: BigDecimal, lat: BigDecimal, address: String, attachmentId: Int, token: String) {

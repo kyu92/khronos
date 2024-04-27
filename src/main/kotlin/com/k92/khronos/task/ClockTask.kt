@@ -2,6 +2,8 @@ package com.k92.khronos.task
 
 import com.k92.khronos.config.KhronosConfig
 import com.k92.khronos.service.AttendanceService
+import com.k92.khronos.service.GeoService
+import jakarta.annotation.PostConstruct
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.io.File
@@ -9,9 +11,9 @@ import java.lang.Exception
 import java.util.*
 
 @Component
-class ClockTask(val khronosConfig: KhronosConfig, val attendanceService: AttendanceService) {
+class ClockTask(val khronosConfig: KhronosConfig, val attendanceService: AttendanceService, val geoService: GeoService) {
 
-    private fun doClock(path: String) {
+    private fun doClock(path: String, offsetUpper: Boolean) {
 //        val dir = File(khronosConfig.morningStartFileDir)
         val dir = File(path)
         if (dir.isFile) {
@@ -32,38 +34,37 @@ class ClockTask(val khronosConfig: KhronosConfig, val attendanceService: Attenda
         val randomPic = files.random()
         val randomLocation = khronosConfig.locationList.random();
         try {
-            val res = attendanceService.getLocation(randomLocation);
-            attendanceService.requestAttendance(System.currentTimeMillis(), res.result.location.lat, res.result.location.lng, randomLocation, randomPic, 0)
+            val res = geoService.getLocation(randomLocation);
+            var timestamp = System.currentTimeMillis()
+            val offset = Random().nextInt(0, khronosConfig.scheduled.offset) * if (offsetUpper) 1 else -1
+            timestamp += offset
+            attendanceService.requestAttendance(timestamp, res.result.location.lat, res.result.location.lng, randomLocation, randomPic, 0)
+            randomPic.delete()
         } catch (e: Exception) {
             // todo 报警
             e.printStackTrace()
         }
         // 打卡完成后删除照片
-        randomPic.delete()
     }
 
-    @Scheduled(cron = "#{khronosConfig.scheduled.morningStartCron}")
     fun runMorningStartClock() {
-       doClock(khronosConfig.morningStartFileDir)
+       doClock(khronosConfig.morningStartFileDir, false)
     }
 
-    @Scheduled(cron = "#{khronosConfig.scheduled.morningEndCron}")
     fun runMorningEndClock() {
-        doClock(khronosConfig.morningEndFileDir)
+        doClock(khronosConfig.morningEndFileDir, true)
     }
 
-    @Scheduled(cron = "#{khronosConfig.scheduled.afternoonStartCron}")
     fun runAfternoonStartClock() {
-        doClock(khronosConfig.afternoonStartFileDir)
+        doClock(khronosConfig.afternoonStartFileDir, false)
     }
 
-    @Scheduled(cron = "#{khronosConfig.scheduled.afternoonEndCron}")
     fun runAfternoonEndClock() {
-        doClock(khronosConfig.afternoonEndFileDir)
+//        println("测试晚加班打卡")
+        doClock(khronosConfig.afternoonEndFileDir, true)
     }
 
-    @Scheduled(cron = "#{khronosConfig.scheduled.nightAddCron}")
     fun runNightAddClock() {
-        doClock(khronosConfig.nightAddFileDir)
+        doClock(khronosConfig.nightAddFileDir, true)
     }
 }

@@ -15,8 +15,12 @@ class KhronosConfig {
             var afternoonStartCron = ""
             var afternoonEndCron = ""
             var nightAddCron = ""
-        }
+            var offset: Int = 0
+            override fun toString(): String {
+                return "Scheduled(morningStartCron='$morningStartCron', morningEndCron='$morningEndCron', afternoonStartCron='$afternoonStartCron', afternoonEndCron='$afternoonEndCron', nightAddCron='$nightAddCron', offset=$offset)"
+            }
 
+        }
     }
 
     var baseUrl = ""
@@ -33,4 +37,7 @@ class KhronosConfig {
     var scheduled: Scheduled = Scheduled()
 
     var baiduAk = "";
+    override fun toString(): String {
+        return "KhronosConfig(baseUrl='$baseUrl', morningStartFileDir='$morningStartFileDir', morningEndFileDir='$morningEndFileDir', afternoonStartFileDir='$afternoonStartFileDir', afternoonEndFileDir='$afternoonEndFileDir', nightAddFileDir='$nightAddFileDir', secret='$secret', phoneNumber='$phoneNumber', locationList=$locationList, scheduled=$scheduled, baiduAk='$baiduAk')"
+    }
 }

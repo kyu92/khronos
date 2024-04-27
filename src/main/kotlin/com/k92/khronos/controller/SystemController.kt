@@ -28,7 +28,7 @@ class SystemController {
     }
 
     @PostMapping("/attendance")
-    fun customAttdance() {
+    fun customAttendance() {
 
     }
 }
