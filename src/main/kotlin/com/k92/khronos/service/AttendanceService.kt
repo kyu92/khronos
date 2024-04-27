@@ -3,10 +3,12 @@ package com.k92.khronos.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.k92.khronos.config.KhronosConfig
 import com.k92.khronos.standard.AttendanceException
-import com.k92.khronos.standard.BaiduEncodeResult
 import com.k92.khronos.standard.ResultMap
+import com.k92.khronos.util.ImageUtil
 import jakarta.annotation.PostConstruct
+import org.springframework.core.io.AbstractResource
 import org.springframework.core.io.FileSystemResource
+import org.springframework.core.io.InputStreamResource
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -16,7 +18,9 @@ import org.springframework.stereotype.Service
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
 import org.springframework.web.client.RestTemplate
+import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.FileInputStream
 import java.math.BigDecimal
 import javax.management.OperationsException
 
@@ -72,9 +76,18 @@ class AttendanceService(val khronosConfig: KhronosConfig, val redisTemplate: Red
     }
 
     fun uploadPic(attachment: File, token: String): Int {
-        val url = "${khronosConfig.baseUrl}/attachment/attendance";
-        val fileSystemResource = FileSystemResource(attachment)
-
+        val url = "${khronosConfig.baseUrl}/attachment/attendance"
+        var fileSystemResource: AbstractResource
+        val size = attachment.length()
+        if (size <= 1024 * 1024) {
+            fileSystemResource = FileSystemResource(attachment)
+        } else {
+            val formatName = attachment.name.substring(attachment.name.lastIndexOf(".") + 1)
+            var src = attachment.readBytes()
+            src = ImageUtil.compressImage(src, 0.8F, formatName)
+            src = ImageUtil.resize(src, 1080, 1920, formatName)
+            fileSystemResource = InputStreamResource(ByteArrayInputStream(src))
+        }
         val params: MultiValueMap<String, Any> = LinkedMultiValueMap()
         val headers = HttpHeaders()
         params.add("file", fileSystemResource)

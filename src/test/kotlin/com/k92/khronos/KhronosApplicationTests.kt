@@ -2,9 +2,13 @@ package com.k92.khronos
 
 import com.k92.khronos.service.GeoService
 import com.k92.khronos.task.ClockTask
+import com.k92.khronos.util.ImageUtil
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.core.io.InputStreamResource
+import java.io.ByteArrayInputStream
+import java.io.File
 
 @SpringBootTest
 class KhronosApplicationTests {
@@ -28,5 +32,16 @@ class KhronosApplicationTests {
     @Test
     fun testAttendance() {
         clockTask.runAfternoonEndClock()
+    }
+
+    @Test
+    fun imageCompress() {
+        val attachment = File("C:\\Users\\92849\\Desktop\\IMG_20240427_181025.jpg")
+        val formatName = attachment.name.substring(attachment.name.lastIndexOf(".") + 1)
+        var src = attachment.readBytes()
+        println(src.size)
+        src = ImageUtil.compressImage(src, 0.8F, formatName)
+        src = ImageUtil.resize(src, 1080, 1920, formatName)
+        println(src.size)
     }
 }
