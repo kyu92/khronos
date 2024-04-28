@@ -9,6 +9,7 @@ import jakarta.annotation.PostConstruct
 import org.springframework.core.io.AbstractResource
 import org.springframework.core.io.FileSystemResource
 import org.springframework.core.io.InputStreamResource
+import org.springframework.core.io.Resource
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -23,6 +24,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
 import java.math.BigDecimal
+import java.util.concurrent.TimeUnit
 import javax.management.OperationsException
 
 @Service
@@ -43,7 +45,7 @@ class AttendanceService(val khronosConfig: KhronosConfig, val redisTemplate: Red
         val tokenKey = getTokenKey(khronosConfig.phoneNumber);
         if (!redisTemplate.hasKey(tokenKey)) {
             val token = createToken();
-            redisTemplate.opsForValue().set(tokenKey, token);
+            redisTemplate.opsForValue().set(tokenKey, token, 30, TimeUnit.DAYS);
         }
     }
 
@@ -59,7 +61,7 @@ class AttendanceService(val khronosConfig: KhronosConfig, val redisTemplate: Red
                 token = redisTemplate.opsForValue().get(tokenKey).toString()
             } else {
                 token = createToken();
-                redisTemplate.opsForValue().set(tokenKey, token);
+                redisTemplate.opsForValue().set(tokenKey, token, 30, TimeUnit.DAYS);
             }
             val attachmentId = uploadPic(attachment, attachmentName, token);
             attendance(timestamp, lon, lat, address, attachmentId, token)
@@ -86,20 +88,32 @@ class AttendanceService(val khronosConfig: KhronosConfig, val redisTemplate: Red
 
     fun uploadPic(attachment: InputStream, fileName: String, token: String): Int {
         val url = "${khronosConfig.baseUrl}/attachment/attendance"
-        var fileSystemResource: AbstractResource
+        val inputSteam: InputStream
         val size = attachment.available()
+        val uploadSize: Long
         if (size <= 1024 * 1024) {
-            fileSystemResource = InputStreamResource(attachment)
+            inputSteam = attachment
+            uploadSize = size.toLong()
         } else {
             val formatName = fileName.substring(fileName.lastIndexOf(".") + 1)
             var src = attachment.readBytes()
             src = ImageUtil.compressImage(src, 0.8F, formatName)
             src = ImageUtil.resize(src, 1080, 1920, formatName)
-            fileSystemResource = InputStreamResource(ByteArrayInputStream(src))
+            uploadSize = src.size.toLong()
+            inputSteam = ByteArrayInputStream(src)
+        }
+        val resource = object: InputStreamResource(inputSteam) {
+            override fun contentLength(): Long {
+                return uploadSize
+            }
+
+            override fun getFilename(): String {
+                return fileName
+            }
         }
         val params: MultiValueMap<String, Any> = LinkedMultiValueMap()
         val headers = HttpHeaders()
-        params.add("file", fileSystemResource)
+        params.add("file", resource)
         headers.contentType = MediaType.MULTIPART_FORM_DATA
         headers["Authorization"]= token
         val requestEntity = HttpEntity(params, headers)
