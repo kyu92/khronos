@@ -41,7 +41,7 @@ class ClockTask(val khronosConfig: KhronosConfig, val attendanceService: Attenda
             val res = geoService.getLocation(randomLocation);
             var timestamp = System.currentTimeMillis()
             val offset = Random().nextInt(0, khronosConfig.scheduled.offset) * if (offsetUpper) 1 else -1
-            timestamp += offset
+            timestamp += offset * 1000
             attendanceService.requestAttendance(timestamp, res.result.location.lat, res.result.location.lng, randomLocation, randomPic, 0)
             // 打卡完成后删除照片
             randomPic.delete()
@@ -57,26 +57,26 @@ class ClockTask(val khronosConfig: KhronosConfig, val attendanceService: Attenda
 
     fun runMorningStartClock() {
         val result = doClock(khronosConfig.morningStartFileDir, false)
-        log.info("上午上班打卡完成，结果: {}, 随机偏移时间: {}，打卡时间: {}", result.success, result.offset, DateTime(result.timestamp).toString("yyyy-MM-dd HH:mm:ss"))
+        log.info("上午上班打卡完成，结果: {}, 随机偏移时间: {}秒，打卡时间: {}", result.success, result.offset, DateTime(result.timestamp).toString("yyyy-MM-dd HH:mm:ss"))
     }
 
     fun runMorningEndClock() {
         val result = doClock(khronosConfig.morningEndFileDir, true)
-        log.info("上午下班打卡完成，结果: {}, 随机偏移时间: {}，打卡时间: {}", result.success, result.offset, DateTime(result.timestamp).toString("yyyy-MM-dd HH:mm:ss"))
+        log.info("上午下班打卡完成，结果: {}, 随机偏移时间: {}秒，打卡时间: {}", result.success, result.offset, DateTime(result.timestamp).toString("yyyy-MM-dd HH:mm:ss"))
     }
 
     fun runAfternoonStartClock() {
         val result = doClock(khronosConfig.afternoonStartFileDir, false)
-        log.info("下午上班打卡完成，结果: {}, 随机偏移时间: {}，打卡时间: {}", result.success, result.offset, DateTime(result.timestamp).toString("yyyy-MM-dd HH:mm:ss"))
+        log.info("下午上班打卡完成，结果: {}, 随机偏移时间: {}秒，打卡时间: {}", result.success, result.offset, DateTime(result.timestamp).toString("yyyy-MM-dd HH:mm:ss"))
     }
 
     fun runAfternoonEndClock() {
         val result = doClock(khronosConfig.afternoonEndFileDir, true)
-        log.info("下午下班打卡完成，结果: {}, 随机偏移时间: {}，打卡时间: {}", result.success, result.offset, DateTime(result.timestamp).toString("yyyy-MM-dd HH:mm:ss"))
+        log.info("下午下班打卡完成，结果: {}, 随机偏移时间: {}秒，打卡时间: {}", result.success, result.offset, DateTime(result.timestamp).toString("yyyy-MM-dd HH:mm:ss"))
     }
 
     fun runNightAddClock() {
         val result = doClock(khronosConfig.nightAddFileDir, true)
-        log.info("晚加班打卡完成，结果: {}, 随机偏移时间: {}，打卡时间: {}", result.success, result.offset, DateTime(result.timestamp).toString("yyyy-MM-dd HH:mm:ss"))
+        log.info("晚加班打卡完成，结果: {}, 随机偏移时间: {}秒，打卡时间: {}", result.success, result.offset, DateTime(result.timestamp).toString("yyyy-MM-dd HH:mm:ss"))
     }
 }

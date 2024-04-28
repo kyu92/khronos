@@ -1,5 +1,6 @@
 spring:
   data:
+    # redis配置，自行修改
     redis:
       host: redis.nat.k92.top
       port: 6379
@@ -39,6 +40,7 @@ khronos:
     - 浙江省杭州市萧山区鸿发路若森杭州绿强食品有限公司内,浩宇建材(杭州)运营中心北118米
     - 浙江省杭州市萧山区鸿发路若森杭州绿强食品有限公司内,浩宇建材(杭州)运营中心北120米
     - 浙江省杭州市萧山区鸿发路若森杭州绿强食品有限公司内,浩宇建材(杭州)运营中心北126米
+  # 百度地图api AccessKey，自行申请
   baidu-ak: 6xAw1qbSQ1qrS8jPo7naXJ8RDoHVHI38
   base-url: https://oa.huanweijia.cn/api
   # 将928495870进行base64编码后的结果
@@ -49,5 +51,7 @@ khronos:
     afternoon-start-cron: "0 25 13 * * ?"
     afternoon-end-cron: "0 54 17 * * ?"
     night-add-cron: "0 14 19 * * ?"
+    # 时间偏移，单位秒，实际打卡时从0 ~ x中生成随机值
     offset: 300
+  # 手机号，对应乾图手机号
   phone-number: 18257657990
